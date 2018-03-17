@@ -10,7 +10,8 @@
     "turf": "^3.0.14",
     "turf-extent": "^1.0.4",
     "voronoi": "^1.0.0",
-    "topojson-server": "^3.0.0"
+    "topojson-server": "^3.0.0",
+    "municipal-brazilian-geodata": "git://github.com/luizpedone/municipal-brazilian-geodata"
   },
   "devDependencies": {},
   "scripts": {
