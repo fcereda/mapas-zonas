@@ -72,6 +72,7 @@ function processCoordinates(uf, coordenadas, borders) {
 
 	borders.features.forEach(feature => {
 		let nome = feature.properties.NOME
+		let codIbge = parseInt(feature.properties.GEOCODIGO)
 		console.log('Drawing maps for ' + nome)
 		nome = Utils.checkRenames(Utils.normalizeNome(nome), uf)
 		let distritos = coordenadasPorMunicipio[nome]
@@ -87,16 +88,22 @@ function processCoordinates(uf, coordenadas, borders) {
 				municipio,
 				zona
 			} = distritos[0]
+			let codTse = parseInt(id.split('-')[0])
 			zona = parseInt(zona)
 			feature.properties = {
 				id,
 				municipio,
-				zona
+				zona,
+				codTse,
+				codIbge
 			}
 			featureCollection.features.push(feature)
 			return
 		}
 
+		// Will only execute the following code if the city
+		// has multiple electoral zones
+		
 		let extent = turfextent(feature)
 		let bbox = {
 			xl: extent[1],
@@ -112,11 +119,14 @@ function processCoordinates(uf, coordenadas, borders) {
 				lat,
 				long
 			} = distrito
+			let codTse = parseInt(id.split('-')[0])
 			zona = parseInt(zona)
 			return {
 				id,
 				municipio,
 				zona,
+				codTse,
+				codIbge,
 				x: parseFloat(lat),
 				y: parseFloat(long)
 			}
@@ -124,7 +134,6 @@ function processCoordinates(uf, coordenadas, borders) {
 
 		var voronoi = new Voronoi()
 		var diagram = voronoi.compute(sites, bbox)
-
 		let cityFeatures = createGeoJSONFromVoronoiDiagram(diagram, feature)
 		featureCollection.features = [...featureCollection.features, ...cityFeatures.features]
 	})
@@ -140,11 +149,15 @@ function createGeoJSONFromVoronoiDiagram(diagram, stateBorder) {
 	}
 
 	function getFeatureForCell(index) {
+		var properties = diagram.cells[index].site
 		var feature = {
 			"type": "Feature",
 			"properties": {
-				id: diagram.cells[index].site.id,
-				municipio: diagram.cells[index].site.municipio,
+				id: properties.id,
+				municipio: properties.municipio,
+				zona: properties.zona,
+				codTse: properties.codTse,
+				codIbge: properties.codIbge,
 				index,
 			},
 			"geometry": {
