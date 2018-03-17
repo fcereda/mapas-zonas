@@ -10,11 +10,11 @@
     "turf": "^3.0.14",
     "turf-extent": "^1.0.4",
     "voronoi": "^1.0.0",
-    "topojson-server": "^3.0.0",
-    "municipal-brazilian-geodata": "git://github.com/luizpedone/municipal-brazilian-geodata"
+    "topojson-server": "^3.0.0"
   },
   "devDependencies": {},
   "scripts": {
+    "postinstall": "if [ ! -d \"./municipal-brazilian-geodata/data\" ]; then git clone git://github.com/luizpedone/municipal-brazilian-geodata ; else echo \"municipal-brazilian-geodata has already been loaded. To reload from GitHub, please remove directory ./municipal-brazilian-geodata and run npm install again\" ; fi",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
