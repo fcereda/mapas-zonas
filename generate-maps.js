@@ -129,7 +129,8 @@ function processCoordinates(uf, coordenadas, borders) {
 		featureCollection.features = [...featureCollection.features, ...cityFeatures.features]
 	})
 
-	saveShapefiles(featureCollection, uf)
+	let topology = convertToTopology(featureCollection)
+	saveShapefiles(featureCollection, topology, uf)
 }
 
 function createGeoJSONFromVoronoiDiagram(diagram, stateBorder) {
@@ -199,19 +200,22 @@ function createGeoJSONFromVoronoiDiagram(diagram, stateBorder) {
 	return geo
 }
 
+function convertToTopology (geoJSON, simplifyWeight = 0.00001) {
+	var topology = topojson.topology({
+		municipios: geoJSON
+	})
+	var topologyAfterPresimplify = topojson.presimplify(topology);
+	var topologySimplified = topojson.simplify(topologyAfterPresimplify, simplifyWeight);
+	return topologySimplified
+}
 
-function saveShapefiles(json, uf) {
+
+function saveShapefiles(geoJSON, topoJSON, uf) {
 	var mapPath = './mapas'
 	var geoJSONPath = mapPath + '/geoJSON'
 	var topoJSONPath = mapPath + '/topoJSON'
 	var geoJSONFile = geoJSONPath + '/shapefile-' + uf + '.json'
 	var topoJSONFile = topoJSONPath + '/topojson-' + uf + '.json'
-	var simplifyWeight = 0.00001
-	var topology = topojson.topology({
-		municipios: json
-	})
-	var topologyAfterPresimplify = topojson.presimplify(topology);
-	var topologySimplified = topojson.simplify(topologyAfterPresimplify, simplifyWeight);
 
 	try {
 		fs.mkdirSync(mapPath)
@@ -223,7 +227,7 @@ function saveShapefiles(json, uf) {
 		fs.mkdirSync(topoJSONPath)
 	} catch (error) {}
 
-	jsonfile.writeFileSync(geoJSONFile, json)
-	jsonfile.writeFileSync(topoJSONFile, topologySimplified)
+	jsonfile.writeFileSync(geoJSONFile, geoJSON)
+	jsonfile.writeFileSync(topoJSONFile, topoJSON)
 }
 
