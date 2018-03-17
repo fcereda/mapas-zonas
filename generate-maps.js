@@ -11,13 +11,10 @@ const fs = require('fs')
 
 const ufs = require('./ufs.js')
 const Utils = require('./utils.js')
-const brStates = require('./br-states.js')
-
-var stateBorder
+//const brStates = require('./br-states.js')
 
 
 main()
-
 
 async function main() {
 	for (var i = 0; i < ufs.length; i++) {
@@ -142,7 +139,7 @@ function processCoordinates(uf, coordenadas, borders) {
 	saveShapefiles(featureCollection, topology, uf)
 }
 
-function createGeoJSONFromVoronoiDiagram(diagram, stateBorder) {
+function createGeoJSONFromVoronoiDiagram(diagram, cityBorder) {
 	var geo = {
 		"type": "FeatureCollection",
 		"features": []
@@ -188,7 +185,7 @@ function createGeoJSONFromVoronoiDiagram(diagram, stateBorder) {
 		return feature
 	}
 
-	let coordinates = stateBorder.geometry.coordinates[0]
+	let coordinates = cityBorder.geometry.coordinates[0]
 
 	if (coordinates.length > 1) {
 		coordinates = [coordinates]
