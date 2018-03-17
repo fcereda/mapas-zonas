@@ -9,8 +9,7 @@
     "topojson": "^3.0.2",
     "turf": "^3.0.14",
     "turf-extent": "^1.0.4",
-    "voronoi": "^1.0.0",
-    "topojson-server": "^3.0.0"
+    "voronoi": "^1.0.0"
   },
   "devDependencies": {},
   "scripts": {
