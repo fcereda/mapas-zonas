@@ -1,0 +1,31 @@
+{
+  "name": "mapas-zonas",
+  "version": "0.1.0",
+  "description": "Generates geoJSON and topoJSON files containing shapes for Brazil's electoral zones and municipalities",
+  "main": "generate-maps.js",
+  "dependencies": {
+    "axios": "^0.18.0",
+    "jsonfile": "^4.0.0",
+    "topojson": "^3.0.2",
+    "turf": "^3.0.14",
+    "turf-extent": "^1.0.4",
+    "voronoi": "^1.0.0",
+    "topojson-server": "^3.0.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://www.github.com/fcereda/mapas-zonas"
+  },
+  "keywords": [
+    "Node.js",
+    "javascript",
+    "geoJSON",
+    "topoJSON"
+  ],
+  "author": "Fabio Cereda",
+  "license": "MIT"
+}
