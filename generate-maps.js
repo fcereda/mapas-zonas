@@ -10,6 +10,7 @@ const jsonfile = require('jsonfile')
 const fs = require('fs')
 
 const ufs = require('./ufs.js')
+const Utils = require('./utils.js')
 const brStates = require('./br-states.js')
 
 var stateBorder
@@ -25,7 +26,8 @@ async function main() {
 		try {
 			await generateShapes(uf, codIbge)
 		} catch (err) {
-			console.log(err)
+			console.log('Error in generateShapes()')
+			console.error(err)
 		}
 	}
 }
@@ -36,7 +38,7 @@ async function generateShapes(uf, codIbge) {
 
 	uf = uf.toUpperCase()
 	console.log('Generating district shapes for ' + uf)
-	console.log('Loading cities shapes')
+	console.log('Loading city shapes')
 	citiesBorders = getCitiesBorders(uf)
 
 	console.log('Loading coordinates from Atlas Eleitoral API')
@@ -44,6 +46,7 @@ async function generateShapes(uf, codIbge) {
 		let response = await axios.get(getCoordenadasURL(uf))
 		coordenadas = response.data
 	} catch (err) {
+		console.error('Error loading coordinates')
 		console.error(err)
 	}
 
@@ -61,7 +64,7 @@ function getCoordenadasURL(uf) {
 }
 
 function processCoordinates(uf, coordenadas, borders) {
-	let coordenadasPorMunicipio = groupBy(coordenadas, coord => normalizeNome(coord.municipio))
+	let coordenadasPorMunicipio = Utils.groupBy(coordenadas, coord => Utils.normalizeNome(coord.municipio))
 	let featureCollection = {
 		"type": "FeatureCollection",
 		"features": []
@@ -69,12 +72,11 @@ function processCoordinates(uf, coordenadas, borders) {
 
 	borders.features.forEach(feature => {
 		let nome = feature.properties.NOME
-		console.log('Processando município ' + nome)
-		nome = checkRenames(normalizeNome(nome), uf)
+		console.log('Drawing maps for ' + nome)
+		nome = Utils.checkRenames(Utils.normalizeNome(nome), uf)
 		let distritos = coordenadasPorMunicipio[nome]
 		if (!distritos) {
 			console.error(`Invalid city name: ${nome} (${uf}), geocode ${feature.properties.GEOCODIGO}`)
-			//console.log(feature.properties)
 			process.exit()
 		}
 		if (distritos.length == 1) {
@@ -96,7 +98,6 @@ function processCoordinates(uf, coordenadas, borders) {
 		}
 
 		let extent = turfextent(feature)
-		console.log(extent)
 		let bbox = {
 			xl: extent[1],
 			yt: extent[0],
@@ -104,7 +105,6 @@ function processCoordinates(uf, coordenadas, borders) {
 			yb: extent[2]
 		}
 		let sites = distritos.map(distrito => {
-			//console.log(distrito)
 			let {
 				id,
 				municipio,
@@ -124,18 +124,13 @@ function processCoordinates(uf, coordenadas, borders) {
 
 		var voronoi = new Voronoi()
 		var diagram = voronoi.compute(sites, bbox)
-		//console.log(diagram)
 
 		let cityFeatures = createGeoJSONFromVoronoiDiagram(diagram, feature)
 		featureCollection.features = [...featureCollection.features, ...cityFeatures.features]
-		//console.log(JSON.stringify(geoJSON))
 	})
 
 	saveShapefiles(featureCollection, uf)
 }
-
-// This textarea does not exist anymore
-//document.getElementById('obj').value = JSON.stringify(geoJSON)
 
 function createGeoJSONFromVoronoiDiagram(diagram, stateBorder) {
 	var geo = {
@@ -179,7 +174,6 @@ function createGeoJSONFromVoronoiDiagram(diagram, stateBorder) {
 		return feature
 	}
 
-	let timeStart = new Date()
 	let coordinates = stateBorder.geometry.coordinates[0]
 
 	if (coordinates.length > 1) {
@@ -202,8 +196,6 @@ function createGeoJSONFromVoronoiDiagram(diagram, stateBorder) {
 		}
 	}
 
-	let timeEnd = new Date()
-	console.log(`Time elapsed: ${(timeEnd - timeStart)/1000} s`)
 	return geo
 }
 
@@ -235,154 +227,3 @@ function saveShapefiles(json, uf) {
 	jsonfile.writeFileSync(topoJSONFile, topologySimplified)
 }
 
-
-function groupBy(arr, idFunc) {
-	var obj = {}
-
-	if (!idFunc) {
-		idFunc = (item) => item.id
-	}
-
-	arr.forEach(item => {
-		let id = idFunc(item)
-		if (!obj[id]) {
-			obj[id] = [item]
-		} else {
-			obj[id].push(item)
-		}
-	})
-
-	return obj
-}
-
-function normalizeNome(str) {
-	if (!str)
-		return str
-	return str.toUpperCase().
-	replace('Á', 'A').
-	replace('É', 'E').
-	replace('Í', 'I').
-	replace('Ó', 'O').
-	replace('Ú', 'U').
-	replace('À', 'A').
-	replace('È', 'E').
-	replace('Ê', 'E').
-	replace('Ã', 'A').
-	replace('À', 'A').
-	replace('Õ', 'O').
-	replace('Ô', 'O').
-	replace('Ç', 'C').
-	replace('Ñ', 'N')
-}
-
-function checkRenames(nome, uf) {
-	var renames = [{
-		old: 'GOVERNADOR LOMANTO JUNIOR',
-		new: 'BARRO PRETO'
-	}, {
-		old: 'ITAPAGE',
-		new: 'ITAPAJE'
-	}, {
-		old: 'SANTO ANTONUIO DO LESTE',
-		new: 'SANTO ANTONIO DO LESTE'
-	}, {
-		old: 'BRASOPOLIS',
-		new: 'BRAZOPOLIS'
-	}, {
-		old: 'ITABIRINHA DE MANTENA',
-		new: 'ITABIRINHA'
-	}, {
-		old: 'ELDORADO DOS CARAJAS',
-		new: 'ELDORADO DO CARAJAS'
-	}, {
-		old: 'SANTA ISABEL DO PARA',
-		new: 'SANTA IZABEL DO PARA'
-	}, {
-		old: 'SANTAREM',
-		new: 'JOCA CLAUDINO',
-		uf: 'PB'
-	}, {
-		old: 'SAO DOMINGOS DE POMBAL',
-		new: 'SAO DOMINGOS'
-	}, {
-		old: 'CAMPO DE SANTANA',
-		new: 'TACIMA',
-		uf: 'PB'
-	}, {
-		old: 'SERIDO',
-		new: 'SAO VICENTE DO SERIDO',
-		uf: 'PB'
-	}, {
-		old: 'VILA ALTA',
-		new: 'ALTO PARAISO',
-		uf: 'PR'
-	}, {
-		old: 'BELEM DE SAO FRANCISCO',
-		new: 'BELEM DO SAO FRANCISCO',
-		uf: 'PE'
-	}, {
-		old: 'IGUARACI',
-		new: 'IGUARACY'
-	}, {
-		old: 'LAGOA DO ITAENGA',
-		new: 'LAGOA DE ITAENGA'
-	}, {
-		old: 'PARATI',
-		new: 'PARATY'
-	}, {
-		old: 'TRAJANO DE MORAIS',
-		new: 'TRAJANO DE MORAES',
-		uf: 'RJ'
-	}, {
-		old: 'PRESIDENTE JUSCELINO',
-		new: 'SERRA CAIADA',
-		uf: 'RN'
-	}, {
-		old: 'SAO MIGUEL DE TOUROS',
-		new: 'SAO MIGUEL DO GOSTOSO',
-		uf: 'RN'
-	}, {
-		old: 'SANTANA DO LIVRAMENTO',
-		new: 'SANT\'ANA DO LIVRAMENTO',
-		uf: 'RS'
-	}, {
-		old: 'PRESIDENTE CASTELO BRANCO',
-		new: 'PRESIDENTE CASTELLO BRANCO',
-		uf: 'SC'
-	}, {
-		old: 'PICARRAS',
-		new: 'BALNEARIO PICARRAS',
-		uf: 'SC'
-	}, {
-		old: 'MOJI-MIRIM',
-		new: 'MOGI MIRIM'
-	}, {
-		old: 'EMBU',
-		new: 'EMBU DAS ARTES',
-		uf: 'SP'
-	}, {
-		old: 'MOJI DAS CRUZES',
-		new: 'MOGI DAS CRUZES'
-	}, {
-		old: 'GRACHO CARDOSO',
-		new: 'GRACCHO CARDOSO'
-	}, {
-		old: 'COUTO DE MAGALHAES',
-		new: 'COUTO MAGALHAES',
-		uf: 'TO'
-	}, {
-		old: 'SAO VALERIO DA NATIVIDADE',
-		new: 'SAO VALERIO',
-		uf: 'TO'
-	}]
-	for (var i = 0; i < renames.length; i++) {
-		if (nome == renames[i].old) {
-			if (renames[i].uf) {
-				if (renames[i].uf != uf)
-					continue
-			}
-			return renames[i].new
-		}
-	}
-	return nome
-}
