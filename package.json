@@ -4,6 +4,7 @@
   "description": "Generates geoJSON and topoJSON files containing shapes for Brazil's electoral zones and municipalities",
   "main": "generate-maps.js",
   "dependencies": {
+    "@turf/intersect": "^6.0.1",
     "axios": "^0.18.0",
     "jsonfile": "^4.0.0",
     "topojson": "^3.0.2",
