@@ -11,7 +11,6 @@ const fs = require('fs')
 
 const ufs = require('./ufs.js')
 const Utils = require('./utils.js')
-//const brStates = require('./br-states.js')
 
 
 main()
