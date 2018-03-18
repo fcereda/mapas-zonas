@@ -9,4 +9,4 @@ npm install
 node generate-maps
 ```
 
-The script will create maps for every Brazilian electoral zone/municipality on folders ./mapas, ./mapas/geoJSON and ./mapas/topoJSON 
+This script will create maps for every Brazilian electoral zone/municipality on folders ./mapas, ./mapas/geoJSON and ./mapas/topoJSON 
