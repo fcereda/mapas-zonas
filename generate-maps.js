@@ -4,14 +4,12 @@ const axios = require('axios')
 const Voronoi = require('voronoi')
 const topojson = require('topojson')
 const turf = require('turf')
-const turfintersect = require('@turf/intersect')
 const turfextent = require('turf-extent')
 const jsonfile = require('jsonfile')
 const fs = require('fs')
 
 const ufs = require('./ufs.js')
 const Utils = require('./utils.js')
-
 
 main()
 
@@ -44,6 +42,7 @@ async function generateShapes(uf, codIbge) {
 	} catch (err) {
 		console.error('Error loading coordinates')
 		console.error(err)
+        exit
 	}
 
 	processCoordinates(uf, coordenadas, citiesBorders)
@@ -128,15 +127,15 @@ function processCoordinates(uf, coordenadas, borders) {
 			}
 		})
 		
-        // Now we're going to eliminate duplicate coordinates, by
-        // creating a small difference between them
+        // Now we eliminate duplicate coordinates, by
+        // creating tiny gaps between them
         sites = sites.sort((a, b) => {
 			if (a.x == b.x)
 			    return a.y - b.y
             return a.x - b.x
 		})
         for (var i=1; i<sites.length; i++) {
-            // Yes, we start with i=1
+            // Yes, we start with i=1 because we'll be referencing sites[i-1]
             let thissite = sites[i]
             let previoussite = sites[i-1]
             if (thissite.x == previoussite.x && thissite.y == previoussite.y) {
@@ -180,7 +179,12 @@ function createGeoJSONFromVoronoiDiagram(diagram, cityBorder) {
 		}
 
 		function convertPointToArray(point) {
-			return [point.y, point.x]
+            // I can't really believe the following code would do the trick:
+            let decimalPlaces = 7
+			return [
+                parseFloat(point.y.toFixed(decimalPlaces)), 
+                parseFloat(point.x.toFixed(decimalPlaces))
+            ]
 		}
 
 		if (!diagram.cells[index]) {
@@ -196,7 +200,13 @@ function createGeoJSONFromVoronoiDiagram(diagram, cityBorder) {
 			}
 			coords.push(convertPointToArray(he.getEndpoint()))
 		})
-
+        /*
+        // Hack to correct some rare rounding errors
+        if (JSON.stringify(coords[0]) != JSON.stringify(coords[coords.length-1])) {
+            coords.push(coords[0])
+        }
+        */
+        
 		feature.geometry.coordinates.push(coords)
 		return feature
 	}
@@ -208,18 +218,21 @@ function createGeoJSONFromVoronoiDiagram(diagram, cityBorder) {
 	}
 
 	let polygon = turf.polygon(coordinates)
-
 	for (var i = 0; i < diagram.cells.length; i++) {
 		let feature = getFeatureForCell(i)
 		if (feature) {
+            //console.log('about to run turf.intersect')
+            //console.log('*** feature ***')
+            //console.log(JSON.stringify(feature))
 			let adjustedfeature = turf.intersect(polygon, feature)
+            //console.log('ok')
 			if (adjustedfeature) {
 				adjustedfeature.properties = feature.properties
 				geo.features.push(adjustedfeature)
 			}
 
 		} else {
-			console.log('indice ' + i + ' deu problema')
+			console.log('Problem in index ' + i)
 		}
 	}
 
