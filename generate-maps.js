@@ -127,6 +127,23 @@ function processCoordinates(uf, coordenadas, borders) {
 				y: parseFloat(long)
 			}
 		})
+		
+        // Now we're going to eliminate duplicate coordinates, by
+        // creating a small difference between them
+        sites = sites.sort((a, b) => {
+			if (a.x == b.x)
+			    return a.y - b.y
+            return a.x - b.x
+		})
+        for (var i=1; i<sites.length; i++) {
+            // Yes, we start with i=1
+            let thissite = sites[i]
+            let previoussite = sites[i-1]
+            if (thissite.x == previoussite.x && thissite.y == previoussite.y) {
+                thissite.x += i * 0.00001
+                thissite.y += i * 0.00001
+            }
+        }            
 
 		var voronoi = new Voronoi()
 		var diagram = voronoi.compute(sites, bbox)
